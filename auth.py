@@ -170,27 +170,18 @@ def _send_email(to_email: str, subject: str, html_body: str, plain_body: str) ->
     msg.attach(MIMEText(plain_body, "plain"))
     msg.attach(MIMEText(html_body, "html"))
 
-    # Try SSL first (port 465), then STARTTLS (port 587)
-    for attempt, method in enumerate(["SSL", "STARTTLS"]):
-        try:
-            if method == "SSL":
-                with smtplib.SMTP_SSL("smtp.gmail.com", 465, timeout=15) as server:
-                    server.login(SMTP_EMAIL, SMTP_PASSWORD)
-                    server.sendmail(SMTP_EMAIL, to_email, msg.as_string())
-            else:
-                with smtplib.SMTP("smtp.gmail.com", 587, timeout=15) as server:
-                    server.ehlo()
-                    server.starttls()
-                    server.ehlo()
-                    server.login(SMTP_EMAIL, SMTP_PASSWORD)
-                    server.sendmail(SMTP_EMAIL, to_email, msg.as_string())
-            print(f"[Auth] ✅ Email sent to {to_email} via {method}")
-            return True
-        except Exception as e:
-            print(f"[Auth] {method} failed: {e}")
-            if attempt == 1:
-                return False
-    return False
+    try:
+        with smtplib.SMTP("smtp.gmail.com", 587, timeout=15) as server:
+            server.ehlo()
+            server.starttls()
+            server.ehlo()
+            server.login(SMTP_EMAIL, SMTP_PASSWORD)
+            server.sendmail(SMTP_EMAIL, to_email, msg.as_string())
+        print(f"[Auth] ✅ Email sent to {to_email} via STARTTLS")
+        return True
+    except Exception as e:
+        print(f"[Auth] Email failed: {e}")
+        return False
 
 
 def _send_otp_email(to_email: str, otp_code: str, user_name: str) -> bool:
